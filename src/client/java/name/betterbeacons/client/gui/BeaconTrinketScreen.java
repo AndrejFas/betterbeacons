@@ -79,10 +79,11 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
 
     @Override
     protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
+        int totalPoints = this.handler.getPropertyDelegate().get(0);
         // These coordinates are relative to the top-left of the GUI
 
         // Draw the Point Counter (Under the blue triangle)
-        context.drawText(this.textRenderer, "0450", 20, 42, 0xFFFFFF, true);
+        context.drawText(this.textRenderer, "Beacon Power: " + totalPoints, 8, 110, 0x404040, false);
 
         // Draw the "Available" text
         context.drawText(this.textRenderer, "Available", 15, 60, 0xFFFFFF, false);
