@@ -14,11 +14,13 @@ import net.minecraft.screen.slot.Slot;
 import net.minecraft.item.Items;
 import net.minecraft.util.collection.DefaultedList;
 
+
 public class BeaconTrinketScreenHandler extends ScreenHandler {
     private final Inventory inventory;
     private final PropertyDelegate propertyDelegate;
     private final ItemStack trinketStack;
     private final PlayerInventory playerInventory; // FIXED: Added field to store reference
+    private boolean isSyncing = false;
 
     // This constructor is called on the CLIENT when opening the screen
     public BeaconTrinketScreenHandler(int syncId, PlayerInventory playerInv, ItemStack stack) {
@@ -63,44 +65,74 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
         syncBeaconData();
     }
 
+
     @Override
     public void onContentChanged(Inventory inventory) {
+        // If we are currently in the middle of a save, ignore further change events
+        if (isSyncing) return;
+
         super.onContentChanged(inventory);
-        syncBeaconData();
+
+        if (this.playerInventory != null && !this.playerInventory.player.getWorld().isClient()) {
+            isSyncing = true;
+            try {
+                DefaultedList<ItemStack> items = DefaultedList.ofSize(12, ItemStack.EMPTY);
+                for (int i = 0; i < 12; i++) {
+                    items.set(i, this.inventory.getStack(i));
+                }
+
+                // Perform the NBT write
+                BeaconTrinketItem.saveInventory(
+                        this.trinketStack,
+                        items,
+                        this.playerInventory.player.getWorld().getRegistryManager()
+                );
+
+                // Update points/charges
+                syncBeaconData();
+            } catch (Exception e) {
+                // Log the error so you can see it in the console without a hard crash
+                e.printStackTrace();
+            } finally {
+                isSyncing = false;
+            }
+        }
     }
 
     @Override
     public boolean onButtonClick(PlayerEntity player, int id) {
-
-        System.out.println("SERVER RECEIVED BUTTON ID: " + id);
-
         if (player.getWorld().isClient) return true;
 
-        int totalCharges = this.propertyDelegate.get(1);
-        int usedCharges = BeaconTrinketItem.getEffectLevel(trinketStack, "used_charges");
+        // IMPORTANT: Get the value from the delegate, which we know is (Total - Used)
+        int availableCharges = this.propertyDelegate.get(1);
 
-        // UPGRADE Logic
+        // 1. UPGRADE Logic (0-11)
         if (id >= 0 && id <= 11) {
             String effectName = getEffectNameFromIndex(id);
+            if (effectName.equals("empty")) return false; // Stop the click if the slot is empty
+
             int currentLevel = BeaconTrinketItem.getEffectLevel(trinketStack, effectName);
 
-            if (usedCharges < totalCharges && currentLevel < 4) {
+            // Check if we have ANY charges left to spend
+            if (availableCharges > 0 && currentLevel < 4) {
+                int usedCharges = BeaconTrinketItem.getEffectLevel(trinketStack, "used_charges");
+
                 BeaconTrinketItem.setEffectLevel(trinketStack, effectName, currentLevel + 1);
                 BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", usedCharges + 1);
 
-                // THIS LINE IS CRITICAL:
                 syncBeaconData();
-
                 this.sendContentUpdates();
                 return true;
             }
         }
-        // 2. Logic for DOWNGRADE (50-61)
+        // 2. DOWNGRADE Logic (50-61)
         else if (id >= 50 && id <= 61) {
             String effectName = getEffectNameFromIndex(id - 50);
             int currentLevel = BeaconTrinketItem.getEffectLevel(trinketStack, effectName);
 
             if (currentLevel > 0) {
+                int usedCharges = BeaconTrinketItem.getEffectLevel(trinketStack, "used_charges");
+
                 BeaconTrinketItem.setEffectLevel(trinketStack, effectName, currentLevel - 1);
                 BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", usedCharges - 1);
 
@@ -109,25 +141,31 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
                 return true;
             }
         }
-        // 3. Logic for CLEAR ALL (100)
+        // 3. CLEAR ALL Logic (100)
         else if (id == 100) {
-            // Loop through all your effects and set to 0
-            // Then set used_charges to 0
+            for (int i = 0; i <= 11; i++) {
+                BeaconTrinketItem.setEffectLevel(trinketStack, getEffectNameFromIndex(i), 0);
+            }
+            BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", 0);
+
+            syncBeaconData();
+            this.sendContentUpdates();
             return true;
         }
-
-        syncBeaconData();
 
         return super.onButtonClick(player, id);
     }
 
     private String getEffectNameFromIndex(int index) {
         return switch(index) {
-            case 0 -> "haste";
-            case 1 -> "speed";
-            case 2 -> "strength";
-            // ... add the rest ...
-            default -> "unknown";
+            case 0 -> "speed";
+            case 1 -> "haste";
+            case 2 -> "resistance";     // Fixed spelling
+            case 3 -> "jump_boost";
+            case 4 -> "strength";   // Added underscore to match MC standards
+            case 5 -> "regeneration";
+            // 6-11 are defined but return "empty" so the logic doesn't crash
+            default -> "empty";
         };
     }
 
@@ -138,21 +176,23 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
         int points = (int) calculatePoints();
         int totalCharges = calculateCharges(points);
 
-        // Read the actual used charges from the item
+        // Read the current NBT value
         int usedCharges = BeaconTrinketItem.getEffectLevel(trinketStack, "used_charges");
 
-        if (this.playerInventory != null && !this.playerInventory.player.getWorld().isClient()) {
-            // Save inventory... (your existing code)
-
-            // Safety check
+        if (!this.playerInventory.player.getWorld().isClient()) {
+            // If the player removed blocks, they lose their spent charges/upgrades
             if (usedCharges > totalCharges) {
-                //resetAllEffects(); // Helper to set all effect NBTs to 0
-                usedCharges = 0;
+                usedCharges = totalCharges; // Cap it at the new max
+                // IMPORTANT: Save this back to the item NBT immediately
+                BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", usedCharges);
+
+                // Optional: You should also loop through your effects
+                // and lower them if usedCharges was forced down.
             }
         }
 
         this.propertyDelegate.set(0, points);
-        // This is what the UI shows: Remaining available charges
+        // UI shows: (Max possible with current blocks) - (What we already spent)
         this.propertyDelegate.set(1, totalCharges - usedCharges);
     }
 
@@ -205,16 +245,18 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
     public ItemStack quickMove(PlayerEntity player, int index) {
         ItemStack newStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
+
         if (slot != null && slot.hasStack()) {
             ItemStack originalStack = slot.getStack();
             newStack = originalStack.copy();
 
-            if (index < 12) { // From Trinket to Player
-                if (!this.insertItem(originalStack, 12, this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
+            if (index < 12) {
+                // FROM Trinket TO Player Inventory (slots 12 to 47)
+                if (!this.insertItem(originalStack, 12, 48, true)) {
+                    return ItemStack.EMPTY; // Returns empty if player inv is full
                 }
-            } else { // From Player to Trinket
-                // FIXED: Ensure only allowed blocks can be shift-clicked in
+            } else {
+                // FROM Player TO Trinket Inventory (slots 0 to 11)
                 if (TrinketSlot.isAllowed(originalStack)) {
                     if (!this.insertItem(originalStack, 0, 12, false)) {
                         return ItemStack.EMPTY;
@@ -229,6 +271,8 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
             } else {
                 slot.markDirty();
             }
+
+            slot.onTakeItem(player, originalStack);
         }
         return newStack;
     }

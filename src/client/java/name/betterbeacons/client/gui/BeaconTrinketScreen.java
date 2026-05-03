@@ -12,6 +12,7 @@ import net.minecraft.util.Identifier;
 public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandler> {
 
     private static final Identifier TEXTURE = Identifier.of("betterbeacons", "textures/gui/container/pocket_beacon.png");
+    private static final Identifier ICONS = Identifier.of("betterbeacons", "textures/gui/icons.png");
 
     public BeaconTrinketScreen(BeaconTrinketScreenHandler handler, PlayerInventory inventory, Text title) {
         super(handler, inventory, title);
@@ -71,9 +72,9 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
         // These coordinates are relative to the top-left of the GUI
 
         // Draw the Point Counter (Under the blue triangle)
-        context.drawText(this.textRenderer, "Beacon Power: " + totalPoints, 8, 110, 0x404040, false);
+        context.drawText(this.textRenderer, "Power: " + totalPoints, 15, 40, 0x404040, false);
 
-        context.drawText(this.textRenderer, "Charges: " + charges, 15, 70, 0xFFD700, false);
+        context.drawText(this.textRenderer, "Charges: " + charges, 15, 50, 0xFFD700, false);
     }
 
     @Override
@@ -82,6 +83,8 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
     }
+
+
 
     // HELPER GETTERS - Move these here, outside the inner class!
     public MinecraftClient getScreenClient() { return this.client; }
@@ -98,12 +101,29 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
         }
 
         @Override
+        protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
+            // 1. Draw the standard button texture (the gray box)
+            super.renderWidget(context, mouseX, mouseY, delta);
+
+            // 2. Calculate source coordinates in the PNG (44x44 grid)
+            float u = (float) (this.effectIndex % 3) * 44;
+            float v = (float) (this.effectIndex / 3) * 44;
+
+            // 3. Draw with scaling
+            context.drawTexture(
+                    ICONS,
+                    this.getX() + 1, this.getY() + 1, // Target X, Y
+                    18, 18,                          // Target Width, Height (on screen)
+                    u, v,                            // Source U, V (in the file)
+                    44, 44,                          // Source Width, Height (how much to take from file)
+                    132, 176                         // Total File Width, Height
+            );
+        }
+
+        @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (this.active && this.visible && this.clicked(mouseX, mouseY)) {
-                // 0 = Left Click, 1 = Right Click
                 int packetId = (button == 1) ? (this.effectIndex + 50) : this.effectIndex;
-
-                // We use the 'screen' reference we passed in the constructor
                 if (screen.getScreenClient().interactionManager != null) {
                     screen.getScreenClient().interactionManager.clickButton(screen.getHandler().syncId, packetId);
                     this.playDownSound(screen.getScreenClient().getSoundManager());
@@ -113,6 +133,5 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
             return false;
         }
     }
-
 
 }

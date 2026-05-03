@@ -10,6 +10,8 @@ import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventories;
+import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -57,18 +59,7 @@ public class BeaconTrinketItem extends TrinketItem {
         return TypedActionResult.success(stack);
     }
 
-    @Override
-    public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
-        if (!entity.getWorld().isClient() && entity instanceof PlayerEntity player) {
-            // Run every 4 seconds
-            if (entity.getWorld().getTime() % 80 == 0) {
-                applyEffect(player, stack, "haste", StatusEffects.HASTE);
-                applyEffect(player, stack, "speed", StatusEffects.SPEED);
-                applyEffect(player, stack, "strength", StatusEffects.STRENGTH);
-                // Add more here to match your switch-case...
-            }
-        }
-    }
+
 
     @Override
     public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
@@ -76,10 +67,10 @@ public class BeaconTrinketItem extends TrinketItem {
         super.appendTooltip(stack, context, tooltip, type);
     }
 
-    private void applyEffect(PlayerEntity player, ItemStack stack, String key, RegistryEntry<StatusEffect> effect) {
-        int level = getEffectLevel(stack, key);
+    public static void applyEffect(PlayerEntity player, ItemStack stack, String nbtKey, RegistryEntry<StatusEffect> effect, int duration) {
+        int level = getEffectLevel(stack, nbtKey);
         if (level > 0) {
-            player.addStatusEffect(new StatusEffectInstance(effect, 160, level - 1, true, false, true));
+            player.addStatusEffect(new StatusEffectInstance(effect, duration, level - 1, true, true));
         }
     }
 
@@ -99,12 +90,15 @@ public class BeaconTrinketItem extends TrinketItem {
         return items;
     }
 
-    public static void saveInventory(ItemStack stack, DefaultedList<ItemStack> items, net.minecraft.registry.RegistryWrapper.WrapperLookup registries) {
-        net.minecraft.nbt.NbtCompound nbt = new net.minecraft.nbt.NbtCompound();
-        // Added registries as the third argument
-        net.minecraft.inventory.Inventories.writeNbt(nbt, items, registries);
+    public static void saveInventory(ItemStack stack, DefaultedList<ItemStack> items, RegistryWrapper.WrapperLookup registries) {
+        if (stack.isEmpty()) return;
 
-        stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_DATA, net.minecraft.component.type.NbtComponent.of(nbt));
+        NbtCompound nbt = new NbtCompound();
+        // This helper from net.minecraft.inventory.Inventories writes the list to NBT
+        Inventories.writeNbt(nbt, items, registries);
+
+        // Update the item's component data
+        stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
     }
 
     public static int getEffectLevel(ItemStack stack, String effectName) {
@@ -128,5 +122,25 @@ public class BeaconTrinketItem extends TrinketItem {
         stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
     }
 
+    private boolean isReceivingBeaconPower(PlayerEntity player) {
+        // We check the player's current status effects
+        return player.getStatusEffects().stream().anyMatch(effect ->
+                // 1. Ambient particles = From a beacon (usually)
+                effect.isAmbient() &&
+                        // 2. Short duration = Currently being refreshed by a nearby source
+                        effect.getDuration() <= 320 && // 320 ticks = 16 seconds
+                        // 3. Match against standard beacon effect types
+                        isStandardBeaconEffect(effect.getEffectType())
+        );
+    }
+
+    private boolean isStandardBeaconEffect(RegistryEntry<StatusEffect> effect) {
+        return effect.equals(StatusEffects.SPEED) ||
+                effect.equals(StatusEffects.HASTE) ||
+                effect.equals(StatusEffects.RESISTANCE) ||
+                effect.equals(StatusEffects.JUMP_BOOST) ||
+                effect.equals(StatusEffects.STRENGTH) ||
+                effect.equals(StatusEffects.REGENERATION);
+    }
 
 }
