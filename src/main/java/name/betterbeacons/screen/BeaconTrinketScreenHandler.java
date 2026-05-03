@@ -69,26 +69,91 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
         syncBeaconData();
     }
 
+    @Override
+    public boolean onButtonClick(PlayerEntity player, int id) {
+
+        System.out.println("SERVER RECEIVED BUTTON ID: " + id);
+
+        if (player.getWorld().isClient) return true;
+
+        int totalCharges = this.propertyDelegate.get(1);
+        int usedCharges = BeaconTrinketItem.getEffectLevel(trinketStack, "used_charges");
+
+        // UPGRADE Logic
+        if (id >= 0 && id <= 11) {
+            String effectName = getEffectNameFromIndex(id);
+            int currentLevel = BeaconTrinketItem.getEffectLevel(trinketStack, effectName);
+
+            if (usedCharges < totalCharges && currentLevel < 4) {
+                BeaconTrinketItem.setEffectLevel(trinketStack, effectName, currentLevel + 1);
+                BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", usedCharges + 1);
+
+                // THIS LINE IS CRITICAL:
+                syncBeaconData();
+
+                this.sendContentUpdates();
+                return true;
+            }
+        }
+        // 2. Logic for DOWNGRADE (50-61)
+        else if (id >= 50 && id <= 61) {
+            String effectName = getEffectNameFromIndex(id - 50);
+            int currentLevel = BeaconTrinketItem.getEffectLevel(trinketStack, effectName);
+
+            if (currentLevel > 0) {
+                BeaconTrinketItem.setEffectLevel(trinketStack, effectName, currentLevel - 1);
+                BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", usedCharges - 1);
+
+                syncBeaconData();
+                this.sendContentUpdates();
+                return true;
+            }
+        }
+        // 3. Logic for CLEAR ALL (100)
+        else if (id == 100) {
+            // Loop through all your effects and set to 0
+            // Then set used_charges to 0
+            return true;
+        }
+
+        syncBeaconData();
+
+        return super.onButtonClick(player, id);
+    }
+
+    private String getEffectNameFromIndex(int index) {
+        return switch(index) {
+            case 0 -> "haste";
+            case 1 -> "speed";
+            case 2 -> "strength";
+            // ... add the rest ...
+            default -> "unknown";
+        };
+    }
+
     /**
      * Handles point calculation, charge calculation, and NBT saving.
      */
     private void syncBeaconData() {
-        // 1. Recalculate and update the delegate
         int points = (int) calculatePoints();
-        this.propertyDelegate.set(0, points);
-        this.propertyDelegate.set(1, calculateCharges(points));
+        int totalCharges = calculateCharges(points);
 
-        // 2. SAVE to the item stack via Data Components
-        if (this.playerInventory != null && !this.playerInventory.player.getWorld().isClient) {
-            DefaultedList<ItemStack> list = DefaultedList.ofSize(12, ItemStack.EMPTY);
-            for (int i = 0; i < 12; i++) {
-                list.set(i, this.inventory.getStack(i));
+        // Read the actual used charges from the item
+        int usedCharges = BeaconTrinketItem.getEffectLevel(trinketStack, "used_charges");
+
+        if (this.playerInventory != null && !this.playerInventory.player.getWorld().isClient()) {
+            // Save inventory... (your existing code)
+
+            // Safety check
+            if (usedCharges > totalCharges) {
+                //resetAllEffects(); // Helper to set all effect NBTs to 0
+                usedCharges = 0;
             }
-
-            // FIXED: Using stored field 'playerInventory' and passing registries
-            var registries = this.playerInventory.player.getWorld().getRegistryManager();
-            BeaconTrinketItem.saveInventory(trinketStack, list, registries);
         }
+
+        this.propertyDelegate.set(0, points);
+        // This is what the UI shows: Remaining available charges
+        this.propertyDelegate.set(1, totalCharges - usedCharges);
     }
 
     public double calculatePoints() {

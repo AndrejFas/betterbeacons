@@ -1,20 +1,23 @@
 package name.betterbeacons.item;
 
 import dev.emi.trinkets.api.SlotReference;
-import dev.emi.trinkets.api.Trinket;
+import dev.emi.trinkets.api.TrinketItem;
 import name.betterbeacons.screen.BeaconTrinketScreenHandler;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
+import net.minecraft.component.DataComponentTypes;
+import net.minecraft.component.type.NbtComponent;
+import net.minecraft.entity.effect.StatusEffect;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventories;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.tooltip.TooltipType;
 import net.minecraft.nbt.NbtCompound;
-import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
@@ -24,7 +27,7 @@ import net.minecraft.world.World;
 
 import java.util.List;
 
-public class BeaconTrinketItem extends Item implements Trinket {
+public class BeaconTrinketItem extends TrinketItem {
 
     public BeaconTrinketItem(Settings settings) {
         super(settings);
@@ -54,6 +57,32 @@ public class BeaconTrinketItem extends Item implements Trinket {
         return TypedActionResult.success(stack);
     }
 
+    @Override
+    public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
+        if (!entity.getWorld().isClient() && entity instanceof PlayerEntity player) {
+            // Run every 4 seconds
+            if (entity.getWorld().getTime() % 80 == 0) {
+                applyEffect(player, stack, "haste", StatusEffects.HASTE);
+                applyEffect(player, stack, "speed", StatusEffects.SPEED);
+                applyEffect(player, stack, "strength", StatusEffects.STRENGTH);
+                // Add more here to match your switch-case...
+            }
+        }
+    }
+
+    @Override
+    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+        tooltip.add(Text.translatable("tooltip.betterbeacons.beacon_trinket").formatted(Formatting.GRAY));
+        super.appendTooltip(stack, context, tooltip, type);
+    }
+
+    private void applyEffect(PlayerEntity player, ItemStack stack, String key, RegistryEntry<StatusEffect> effect) {
+        int level = getEffectLevel(stack, key);
+        if (level > 0) {
+            player.addStatusEffect(new StatusEffectInstance(effect, 160, level - 1, true, false, true));
+        }
+    }
+
     // 2. Update the helper methods
     public static DefaultedList<ItemStack> getInventory(ItemStack stack, net.minecraft.registry.RegistryWrapper.WrapperLookup registries) {
         DefaultedList<ItemStack> items = DefaultedList.ofSize(12, ItemStack.EMPTY);
@@ -78,16 +107,26 @@ public class BeaconTrinketItem extends Item implements Trinket {
         stack.set(net.minecraft.component.DataComponentTypes.CUSTOM_DATA, net.minecraft.component.type.NbtComponent.of(nbt));
     }
 
-    @Override
-    public void tick(ItemStack stack, SlotReference slot, LivingEntity entity) {
-        if (!entity.getWorld().isClient()) {
-            // Effect logic will go here
+    public static int getEffectLevel(ItemStack stack, String effectName) {
+        NbtComponent nbtComponent = stack.get(DataComponentTypes.CUSTOM_DATA);
+        if (nbtComponent != null) {
+            NbtCompound nbt = nbtComponent.copyNbt();
+            return nbt.getInt(effectName + "_level");
         }
+        return 0;
     }
 
-    @Override
-    public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
-        tooltip.add(Text.translatable("tooltip.betterbeacons.beacon_trinket").formatted(Formatting.GRAY));
-        super.appendTooltip(stack, context, tooltip, type);
+    public static void setEffectLevel(ItemStack stack, String effectName, int level) {
+        NbtCompound nbt = new NbtCompound();
+        NbtComponent nbtComponent = stack.get(DataComponentTypes.CUSTOM_DATA);
+
+        if (nbtComponent != null) {
+            nbt = nbtComponent.copyNbt();
+        }
+
+        nbt.putInt(effectName + "_level", level);
+        stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
     }
+
+
 }

@@ -6,6 +6,7 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+
 repositories {
 	// Add repositories to retrieve artifacts from in here.
 	// You should only use this when depending on other mods because
@@ -39,10 +40,16 @@ dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	modApi "com.terraformersmc:modmenu:11.0.1"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
-	modImplementation "dev.emi:trinkets:3.10.0" // Use the latest 1.21.1 version from their Modrinth page
+	modImplementation "dev.emi:trinkets:${trinket_version}"
+	include "dev.emi:trinkets:${trinket_version}"
+
+	modImplementation "org.ladysnake.cardinal-components-api:cardinal-components-base:6.1.1"
+	modImplementation "org.ladysnake.cardinal-components-api:cardinal-components-entity:6.1.1"
+
 }
 
 processResources {

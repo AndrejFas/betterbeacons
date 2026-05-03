@@ -1,6 +1,7 @@
 package name.betterbeacons.client.gui;
 
 import name.betterbeacons.screen.BeaconTrinketScreenHandler;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -9,9 +10,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
 public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandler> {
-    // OLD: private static final Identifier TEXTURE = Identifier.of("minecraft", "textures/gui/container/beacon.png");
 
-    // NEW:
     private static final Identifier TEXTURE = Identifier.of("betterbeacons", "textures/gui/container/pocket_beacon.png");
 
     public BeaconTrinketScreen(BeaconTrinketScreenHandler handler, PlayerInventory inventory, Text title) {
@@ -26,35 +25,23 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
         int x = (width - backgroundWidth) / 2;
         int y = (height - backgroundHeight) / 2;
 
-        // Add 12 buttons for effects (3 columns x 4 rows)
-        for (int row = 0; row < 4; row++) { // Changed from 3 to 4
-            for (int col = 0; col < 3; col++) { // Changed from 4 to 3
-                int effectIndex = row * 3 + col; // Now calculates based on 3 columns
-
-                this.addDrawableChild(ButtonWidget.builder(Text.literal(""), button -> {
-                            // Logic to select effect send packet to server
-                            selectEffect(effectIndex);
-                        })
-                        // Adjusted spacing: col * 22 for X, row * 22 for Y
-                        .dimensions(x + 125 + (col * 22), y + 11 + (row * 22), 20, 20)
-                        .build());
+        for (int row = 0; row < 4; row++) {
+            for (int col = 0; col < 3; col++) {
+                int effectIndex = row * 3 + col;
+                this.addDrawableChild(new EffectButton(
+                        x + 125 + (col * 22), y + 11 + (row * 22), 20, 20,
+                        effectIndex, this
+                ));
             }
         }
 
-        // 2. The "Clear All" Button
-        // Positioned below the last row (row 3).
-        // Since the last row is at y + 11 + (3 * 22) = 77, we put this at y + 100.
+        // Clear All Button
         this.addDrawableChild(ButtonWidget.builder(Text.literal("X"), button -> {
-                    // Logic to clear all effects
-                    //clearAllEffects();
-                })
-                // x + 70 aligns it with the left of the grid.
-                // 62 width spans roughly the width of all 3 columns.
-                .dimensions(x + 125, y + 100, 64, 15)
-                .build());
-    }
-
-    private void selectEffect(int effectIndex) {
+            // Use 'this.client' or 'BeaconTrinketScreen.this.client'
+            if (this.client != null && this.client.interactionManager != null) {
+                this.client.interactionManager.clickButton(this.handler.syncId, 100);
+            }
+        }).dimensions(x + 125, y + 100, 64, 15).build());
     }
 
     @Override
@@ -94,6 +81,37 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
         this.renderBackground(context, mouseX, mouseY, delta);
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
+    }
+
+    // HELPER GETTERS - Move these here, outside the inner class!
+    public MinecraftClient getScreenClient() { return this.client; }
+    public BeaconTrinketScreenHandler getHandler() { return this.handler; }
+
+    private class EffectButton extends ButtonWidget {
+        private final int effectIndex;
+        private final BeaconTrinketScreen screen;
+
+        public EffectButton(int x, int y, int width, int height, int index, BeaconTrinketScreen screen) {
+            super(x, y, width, height, Text.empty(), b -> {}, DEFAULT_NARRATION_SUPPLIER);
+            this.effectIndex = index;
+            this.screen = screen;
+        }
+
+        @Override
+        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            if (this.active && this.visible && this.clicked(mouseX, mouseY)) {
+                // 0 = Left Click, 1 = Right Click
+                int packetId = (button == 1) ? (this.effectIndex + 50) : this.effectIndex;
+
+                // We use the 'screen' reference we passed in the constructor
+                if (screen.getScreenClient().interactionManager != null) {
+                    screen.getScreenClient().interactionManager.clickButton(screen.getHandler().syncId, packetId);
+                    this.playDownSound(screen.getScreenClient().getSoundManager());
+                }
+                return true;
+            }
+            return false;
+        }
     }
 
 
