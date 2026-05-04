@@ -1,6 +1,9 @@
 package name.betterbeacons;
 
+import config.BetterBeaconsConfig;
 import dev.emi.trinkets.api.TrinketsApi;
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import name.betterbeacons.item.BeaconMedaillon;
 import name.betterbeacons.item.BeaconTrinketItem;
 import name.betterbeacons.component.ModDataComponents;
@@ -29,6 +32,7 @@ import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Rarity;
 import org.slf4j.Logger;
@@ -37,7 +41,9 @@ import net.minecraft.loot.condition.RandomChanceWithEnchantedBonusLootCondition;
 
 public class Betterbeacons implements ModInitializer {
 	public static final String MOD_ID = "betterbeacons";
+	public static BetterBeaconsConfig CONFIG;
 
+	public static final Identifier OPEN_GUI_PACKET_ID = Identifier.of("betterbeacons", "open_gui");
 	// 1. ADD THIS FIELD (Ensure it is public and static)
 	public static final ScreenHandlerType<BeaconTrinketScreenHandler> BEACON_TRINKET_SCREEN_HANDLER =
 			Registry.register(
@@ -58,6 +64,12 @@ public class Betterbeacons implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
+
+		AutoConfig.register(BetterBeaconsConfig.class, (config, clazz) -> new GsonConfigSerializer<>(config, clazz));
+		//AutoConfig.register(BetterBeaconsConfig.class, GsonConfigSerializer::new);
+		CONFIG = AutoConfig.getConfigHolder(BetterBeaconsConfig.class).getConfig();
+
+
 		// This code runs as soon as Minecraft is in a mod-load-ready state.
 		// However, some things (like resources) may still be uninitialized.
 		// Proceed with mild caution.
@@ -130,7 +142,14 @@ public class Betterbeacons implements ModInitializer {
 						}
 					});
 				}
+
 			});
+		});
+
+		AutoConfig.getConfigHolder(BetterBeaconsConfig.class).registerSaveListener((holder, config) -> {
+			// This code runs whenever the config is saved via Mod Menu
+			// You can put logic here to update things immediately
+			return ActionResult.SUCCESS;
 		});
 	}
 }

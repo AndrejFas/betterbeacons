@@ -1,6 +1,7 @@
 package name.betterbeacons.mixin;
 
 import dev.emi.trinkets.api.TrinketsApi;
+import name.betterbeacons.Betterbeacons;
 import name.betterbeacons.item.BeaconTrinketItem;
 import net.minecraft.block.entity.BeaconBlockEntity;
 import net.minecraft.entity.effect.StatusEffect;
@@ -12,8 +13,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
@@ -47,6 +47,23 @@ public abstract class BeaconBlockEntityMixin {
                 }
             });
         }
+    }
+
+    @ModifyConstant(method = "updateLevel", constant = @Constant(intValue = 4))
+    private static int increaseMaxLevel(int original) {
+        return 8; // Allow up to 8 layers for example
+    }
+
+    @ModifyVariable(method = "applyPlayerEffects", at = @At("STORE"), ordinal = 0)
+    private static double customRangeScaling(double originalRadius, World world, BlockPos pos, int level) {
+        List<Double> ranges = Betterbeacons.CONFIG.vanillaBeacon.beaconRanges;
+
+        // Check if the level exists in our config list (level 1 is index 0)
+        if (level > 0 && level <= ranges.size()) {
+            return ranges.get(level - 1);
+        }
+
+        return (level * 10.0) + 10.0; // Fallback
     }
 
     private static void applyNecklaceEffects(PlayerEntity player, ItemStack stack, int duration) {

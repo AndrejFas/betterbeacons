@@ -20,6 +20,9 @@
 		],
 		"client": [
 			"name.betterbeacons.client.BetterbeaconsClient"
+		],
+		"modmenu": [
+			"name.betterbeacons.client.ModMenuIntegration"
 		]
 	},
 	"mixins": [
