@@ -5,6 +5,9 @@ import name.betterbeacons.screen.BeaconTrinketScreenHandler;
 import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory;
 import net.minecraft.component.DataComponentTypes;
 import net.minecraft.component.type.NbtComponent;
+import net.minecraft.entity.attribute.EntityAttribute;
+import net.minecraft.entity.attribute.EntityAttributeModifier;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.effect.StatusEffect;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -21,6 +24,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.world.World;
@@ -57,7 +61,17 @@ public class BeaconTrinketItem extends TrinketItem {
         return TypedActionResult.success(stack);
     }
 
-
+    @Override
+    public void onUnequip(ItemStack stack, dev.emi.trinkets.api.SlotReference slot, net.minecraft.entity.LivingEntity entity) {
+        // 1. Always check if the entity is a player
+        if (entity instanceof PlayerEntity player) {
+            // 2. Only run this on the server side
+            if (!player.getWorld().isClient) {
+                removeTrinketAttributes(player);
+            }
+        }
+        super.onUnequip(stack, slot, entity);
+    }
 
     @Override
     public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
@@ -118,5 +132,51 @@ public class BeaconTrinketItem extends TrinketItem {
 
         nbt.putInt(effectName + "_level", level);
         stack.set(DataComponentTypes.CUSTOM_DATA, NbtComponent.of(nbt));
+    }
+
+    public static void applySpecialAttributes(PlayerEntity player, ItemStack stack, int duration) {
+        // 1. Reach Scaling: +1.0 block per level (Total +4.0 at Level 4)
+        int reachLvl = getEffectLevel(stack, "reach");
+        if (reachLvl > 0) {
+            double boost = reachLvl * 1.0;
+            applyTempModifier(player, EntityAttributes.PLAYER_BLOCK_INTERACTION_RANGE, "trinket_block_reach", boost);
+            applyTempModifier(player, EntityAttributes.PLAYER_ENTITY_INTERACTION_RANGE, "trinket_entity_reach", boost);
+        }
+
+        // 2. Knockback Resistance: +0.25 per level (Level 4 = 1.0, 100% resistance)
+        int kbLvl = getEffectLevel(stack, "knockback_res");
+        if (kbLvl > 0) {
+            double boost = kbLvl * 0.25;
+            applyTempModifier(player, EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, "trinket_kb", boost);
+        }
+    }
+
+    private static void applyTempModifier(PlayerEntity player, RegistryEntry<EntityAttribute> attr, String id, double value) {
+        var instance = player.getAttributeInstance(attr);
+        if (instance != null) {
+            Identifier modifierId = Identifier.of("betterbeacons", id);
+            if (instance.getModifier(modifierId) == null) {
+                instance.addTemporaryModifier(new EntityAttributeModifier(
+                        modifierId, value, EntityAttributeModifier.Operation.ADD_VALUE));
+            }
+        }
+    }
+
+    public static boolean hasEffect(ItemStack stack, String effectName) {
+        return getEffectLevel(stack, effectName) > 0;
+    }
+
+    // Ensure removeTrinketAttributes stays clean
+    public static void removeTrinketAttributes(PlayerEntity player) {
+        removeModifier(player, EntityAttributes.PLAYER_BLOCK_INTERACTION_RANGE, "trinket_block_reach");
+        removeModifier(player, EntityAttributes.PLAYER_ENTITY_INTERACTION_RANGE, "trinket_entity_reach");
+        removeModifier(player, EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, "trinket_kb");
+    }
+
+    private static void removeModifier(PlayerEntity player, RegistryEntry<EntityAttribute> attr, String id) {
+        var instance = player.getAttributeInstance(attr);
+        if (instance != null) {
+            instance.removeModifier(Identifier.of("betterbeacons", id));
+        }
     }
 }

@@ -67,12 +67,20 @@ public abstract class BeaconBlockEntityMixin {
     }
 
     private static void applyNecklaceEffects(PlayerEntity player, ItemStack stack, int duration) {
-        // Ensure these methods are public and static in your BeaconTrinketItem class!
+        // Standard Vanilla Effects
         BeaconTrinketItem.applyEffect(player, stack, "haste", StatusEffects.HASTE, duration);
         BeaconTrinketItem.applyEffect(player, stack, "speed", StatusEffects.SPEED, duration);
         BeaconTrinketItem.applyEffect(player, stack, "strength", StatusEffects.STRENGTH, duration);
         BeaconTrinketItem.applyEffect(player, stack, "resistance", StatusEffects.RESISTANCE, duration);
         BeaconTrinketItem.applyEffect(player, stack, "jump_boost", StatusEffects.JUMP_BOOST, duration);
         BeaconTrinketItem.applyEffect(player, stack, "regeneration", StatusEffects.REGENERATION, duration);
+
+        // New Standard Effects
+        BeaconTrinketItem.applyEffect(player, stack, "saturation", StatusEffects.SATURATION, duration);
+        BeaconTrinketItem.applyEffect(player, stack, "dolphins_grace", StatusEffects.DOLPHINS_GRACE, duration);
+
+        // Special Attribute-based Effects
+        // These require unique logic since they aren't standard potion effects
+        BeaconTrinketItem.applySpecialAttributes(player, stack, duration);
     }
 }

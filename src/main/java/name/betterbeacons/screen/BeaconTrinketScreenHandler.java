@@ -116,10 +116,8 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
 
             if (availableCharges > 0 && currentLevel < 4) {
                 //Check if this is a NEW effect activation
-                if (currentLevel == 0) {
-                    if (getCurrentlyActiveCount() >= getMaxActiveEffects()) {
-                        return false;
-                    }
+                if (currentLevel == 0 && getCurrentlyActiveCount() >= getMaxActiveEffects()) {
+                    return false;
                 }
 
                 int usedCharges = BeaconTrinketItem.getEffectLevel(trinketStack, "used_charges");
@@ -164,11 +162,16 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
         return switch(index) {
             case 0 -> "speed";
             case 1 -> "haste";
-            case 2 -> "resistance";     // Fixed spelling
+            case 2 -> "resistance";
             case 3 -> "jump_boost";
-            case 4 -> "strength";   // Added underscore to match MC standards
+            case 4 -> "strength";
             case 5 -> "regeneration";
-            // 6-11 are defined but return "empty" so the logic doesn't crash
+            case 6 -> "saturation";
+            case 7 -> "dolphins_grace";
+            case 8 -> "reach";
+            case 9 -> "knockback_res";
+            //case 10 -> "empty";
+            //case 11 -> "empty";
             default -> "empty";
         };
     }
@@ -359,9 +362,10 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
      */
     public int getCurrentlyActiveCount() {
         int active = 0;
-        // Check the 6 effects you currently have defined (0 to 5)
-        for (int i = 0; i < 6; i++) {
-            if (BeaconTrinketItem.getEffectLevel(trinketStack, getEffectNameFromIndex(i)) > 0) {
+        // Check all possible effects (0 to 10)
+        for (int i = 0; i <= 11; i++) {
+            String effectName = getEffectNameFromIndex(i);
+            if (!effectName.equals("empty") && BeaconTrinketItem.getEffectLevel(trinketStack, effectName) > 0) {
                 active++;
             }
         }
