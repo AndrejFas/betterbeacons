@@ -145,10 +145,5 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
             }
             return false;
         }
-
-
     }
-
-
-
 }

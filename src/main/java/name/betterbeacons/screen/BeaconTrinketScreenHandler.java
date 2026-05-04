@@ -104,7 +104,7 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
     @Override
     public boolean onButtonClick(PlayerEntity player, int id) {
         if (player.getWorld().isClient) return true;
-
+        boolean changed = false;
         // IMPORTANT: Get the value from the delegate, which we know is (Total - Used)
         int availableCharges = this.propertyDelegate.get(1);
 
@@ -122,10 +122,7 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
                 BeaconTrinketItem.setEffectLevel(trinketStack, effectName, currentLevel + 1);
                 BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", usedCharges + 1);
 
-                syncBeaconData();
-                this.sendContentUpdates();
-                this.playerInventory.markDirty();
-                return true;
+                changed = true;
             }
         }
         // 2. DOWNGRADE Logic (50-61)
@@ -139,10 +136,7 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
                 BeaconTrinketItem.setEffectLevel(trinketStack, effectName, currentLevel - 1);
                 BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", usedCharges - 1);
 
-                syncBeaconData();
-                this.sendContentUpdates();
-                this.playerInventory.markDirty();
-                return true;
+                changed = true;
             }
         }
         // 3. CLEAR ALL Logic (100)
@@ -152,14 +146,14 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
             }
             BeaconTrinketItem.setEffectLevel(trinketStack, "used_charges", 0);
 
+            changed = true;
+        }
+        if (changed) {
             syncBeaconData();
-            this.sendContentUpdates();
-            this.playerInventory.markDirty();
+            this.sendContentUpdates(); // Force sync to client slots
             return true;
         }
 
-        this.sendContentUpdates();
-        this.playerInventory.markDirty();
         return super.onButtonClick(player, id);
     }
 
@@ -329,20 +323,32 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
         String name = getEffectNameFromIndex(index);
         if (name.equals("empty")) return 0;
 
-        // Logic: If we are on the client, we want to look at the player's
-        // actual equipped trinkets, which ARE synced by the Trinkets mod.
+        // 1. Identify which stack we should actually be reading from.
+        // We want the "Live" stack that Minecraft is currently syncing.
+        ItemStack stackToRead = this.trinketStack;
+
         if (this.playerInventory.player.getWorld().isClient()) {
+            // CASE A: Check Trinket Slots (Synced by Trinkets API)
             var component = dev.emi.trinkets.api.TrinketsApi.getTrinketComponent(this.playerInventory.player);
             if (component.isPresent()) {
                 var equipped = component.get().getEquipped(stack -> stack.getItem() instanceof BeaconTrinketItem);
                 if (!equipped.isEmpty()) {
-                    // Return the level from the ACTUAL synced stack in the trinket slot
-                    return BeaconTrinketItem.getEffectLevel(equipped.get(0).getRight(), name);
+                    stackToRead = equipped.get(0).getRight();
+                } else {
+                    // CASE B: The item is in the hand/hotbar.
+                    // We MUST find the stack inside the ScreenHandler's slots.
+                    // These slots are automatically updated by the server's 'sendContentUpdates()'.
+                    for (Slot slot : this.slots) {
+                        ItemStack slotStack = slot.getStack();
+                        if (slotStack.getItem() instanceof BeaconTrinketItem) {
+                            stackToRead = slotStack;
+                            break;
+                        }
+                    }
                 }
             }
         }
 
-        // Fallback for server-side or if trinket isn't found
-        return BeaconTrinketItem.getEffectLevel(this.trinketStack, name);
+        return BeaconTrinketItem.getEffectLevel(stackToRead, name);
     }
 }
