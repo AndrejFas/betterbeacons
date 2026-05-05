@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "LLL",
+    "L L",
+    "RMR"
+  ],
+  "key": {
+    "L": { "item": "personal_beacon:dragon_leather" },
+    "R": { "item": "minecraft:redstone_block" },
+    "M": { "item": "personal_beacon:beacon_medaillon" }
+  },
+  "result": {
+    "id": "personal_beacon:beacon_trinket",
+    "count": 1
+  }
+}

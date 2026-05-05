@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "GEG",
+    "DBD",
+    "GEG"
+  ],
+  "key": {
+    "G": { "item": "minecraft:gold_block" },
+    "E": { "item": "minecraft:emerald_block" },
+    "D": { "item": "minecraft:diamond_block" },
+    "B": { "item": "minecraft:beacon"}
+  },
+  "result": {
+    "id": "personal_beacon:beacon_medaillon",
+    "count": 1
+  }
+}

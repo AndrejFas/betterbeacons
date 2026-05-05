@@ -1,0 +1,22 @@
+{
+  "key.personal_beacon.open_gui": "Open Necklace Inventory",
+  "category.personal_beacon": "Better Beacons",
+  "text.autoconfig.personal_beacon.title": "Better Beacons Configuration",
+
+  "text.autoconfig.personal_beacon.option.vanillaBeacon": "Vanilla Beacon Settings",
+  "text.autoconfig.personal_beacon.option.vanillaBeacon.beaconRanges": "Beacon Range per Level",
+  "text.autoconfig.personal_beacon.option.vanillaBeacon.beaconRanges.@Tooltip": "Index 0 is Level 1, Index 7 is Level 8. Default is [20, 30, 40, 50, 65, 80, 100, 150].",
+
+  "text.autoconfig.personal_beacon.option.trinketBeacon": "Trinket Beacon Settings",
+  "text.autoconfig.personal_beacon.option.trinketBeacon.copperValue": "Copper Block Points",
+  "text.autoconfig.personal_beacon.option.trinketBeacon.ironValue": "Iron Block Points",
+  "text.autoconfig.personal_beacon.option.trinketBeacon.goldValue": "Gold Block Points",
+  "text.autoconfig.personal_beacon.option.trinketBeacon.emeraldValue": "Emerald Block Points",
+  "text.autoconfig.personal_beacon.option.trinketBeacon.diamondValue": "Diamond Block Points",
+
+  "text.autoconfig.personal_beacon.option.trinketBeacon.netheriteMultiplier": "Netherite Block Multiplier",
+  "text.autoconfig.personal_beacon.option.trinketBeacon.netheriteMultiplier.@Tooltip": "How much each Netherite block adds to the total multiplier (e.g. 0.5).",
+
+  "text.autoconfig.personal_beacon.option.trinketBeacon.uniqueMultiplier": "Unique Item Multiplier",
+  "text.autoconfig.personal_beacon.option.trinketBeacon.uniqueMultiplier.@Tooltip": "Bonus multiplier for each unique block type present in the necklace."
+}

@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "betterbeacons",
+	"id": "personal_beacon",
 	"version": "${version}",
-	"name": "betterbeacons",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "Personal Beacon",
+	"description": "This mod adds personal beacon with custom effects that is powered by vanilla beacon!",
 	"authors": [
 		"Me!"
 	],
@@ -12,28 +12,28 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/betterbeacons/icon.png",
+	"icon": "assets/personal_beacon/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"name.betterbeacons.Betterbeacons"
+			"name.personal_beacon.PersonalBeacon"
 		],
 		"client": [
-			"name.betterbeacons.client.BetterbeaconsClient"
+			"name.personal_beacon.client.PersonalBeaconClient"
 		],
 		"modmenu": [
-			"name.betterbeacons.client.ModMenuIntegration"
+			"name.personal_beacon.client.ModMenuIntegration"
 		]
 	},
 	"mixins": [
-		"betterbeacons.mixins.json",
+		"personal_beacon.mixins.json",
 		{
-			"config": "betterbeacons.client.mixins.json",
+			"config": "personal_beacon.client.mixins.json",
 			"environment": "client"
 		}
 	],
 	"depends": {
-		"fabricloader": ">=0.19.2",
+		"fabricloader": ">=0.16.14",
 		"minecraft": "~1.21.1",
 		"java": ">=21",
 		"fabric-api": "*",

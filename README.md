@@ -1,4 +1,4 @@
-# betterbeacons
+# personal_beacon
 
 ## Setup
 

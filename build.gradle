@@ -28,7 +28,7 @@ loom {
 	splitEnvironmentSourceSets()
 
 	mods {
-		"betterbeacons" {
+		"personal_beacon" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}
