@@ -168,15 +168,27 @@ public class BeaconTrinketScreen extends HandledScreen<BeaconTrinketScreenHandle
 
         @Override
         protected void renderWidget(DrawContext context, int mouseX, int mouseY, float delta) {
-            // 1. Draw the button box
+            // 1. Draw the button box (The standard gray Minecraft button)
             super.renderWidget(context, mouseX, mouseY, delta);
 
             // 2. Draw the Icon
-            // Note: Use % 3 if your PNG is still 3 columns wide, or % 4 if you changed it!
-            int u = (this.effectIndex % 3) * 44;
-            int v = (this.effectIndex / 3) * 44;
+            // Calculation: 3 columns (240 / 80 = 3)
+            int u = (this.effectIndex % 3) * 80;
+            int v = (this.effectIndex / 3) * 80;
 
-            context.drawTexture(ICONS, this.getX() + 1, this.getY() + 1, 18, 18, u, v, 44, 44, 132, 176);
+            context.drawTexture(
+                    ICONS,
+                    this.getX() + 1,    // Screen X: 1px padding inside the button
+                    this.getY() + 1,    // Screen Y: 1px padding inside the button
+                    18,                 // Width on screen (to fit inside 20x20 button)
+                    18,                 // Height on screen
+                    (float)u,           // u: start horizontal pixel in PNG
+                    (float)v,           // v: start vertical pixel in PNG
+                    80,                 // regionWidth: how many pixels wide to take from PNG
+                    80,                 // regionHeight: how many pixels tall to take from PNG
+                    240,                // textureWidth: total width of your PNG file
+                    320                 // textureHeight: total height of your PNG file
+            );
 
             // 3. Draw the Level Number
             int level = screen.getHandler().getLevelForIndex(this.effectIndex);
