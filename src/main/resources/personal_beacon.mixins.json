@@ -3,8 +3,8 @@
 	"package": "name.personal_beacon.mixin",
 	"compatibilityLevel": "JAVA_21",
 	"mixins": [
-		"ExampleMixin",
-		"BeaconBlockEntityMixin"
+      "ItemEntityMixin",
+      "BeaconBlockEntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

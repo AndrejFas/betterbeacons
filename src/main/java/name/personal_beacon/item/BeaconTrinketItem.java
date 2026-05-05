@@ -148,6 +148,16 @@ public class BeaconTrinketItem extends TrinketItem {
             double boost = kbLvl * 0.25;
             applyTempModifier(player, EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, "trinket_kb", boost);
         }
+
+        // 3. Vacuum (Magnet) Logic
+        // We boost the Entity Interaction Range. This determines how far away
+        // the player "touches" entities, including ItemEntities.
+        int vacuumLvl = getEffectLevel(stack, "vacuum");
+        if (vacuumLvl > 0) {
+            // Level 1: +2.0, Level 4: +8.0 blocks
+            double boost = vacuumLvl * 2.0;
+            applyTempModifier(player, EntityAttributes.PLAYER_ENTITY_INTERACTION_RANGE, "trinket_vacuum", boost);
+        }
     }
 
     private static void applyTempModifier(PlayerEntity player, RegistryEntry<EntityAttribute> attr, String id, double value) {
@@ -170,6 +180,7 @@ public class BeaconTrinketItem extends TrinketItem {
         removeModifier(player, EntityAttributes.PLAYER_BLOCK_INTERACTION_RANGE, "trinket_block_reach");
         removeModifier(player, EntityAttributes.PLAYER_ENTITY_INTERACTION_RANGE, "trinket_entity_reach");
         removeModifier(player, EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, "trinket_kb");
+        removeModifier(player, EntityAttributes.PLAYER_ENTITY_INTERACTION_RANGE, "trinket_vacuum");
     }
 
     private static void removeModifier(PlayerEntity player, RegistryEntry<EntityAttribute> attr, String id) {

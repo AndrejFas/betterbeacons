@@ -170,7 +170,7 @@ public class BeaconTrinketScreenHandler extends ScreenHandler {
             case 7 -> "dolphins_grace";
             case 8 -> "reach";
             case 9 -> "knockback_res";
-            //case 10 -> "empty";
+            case 10 -> "vacuum";
             //case 11 -> "empty";
             default -> "empty";
         };
