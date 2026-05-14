@@ -12,7 +12,7 @@
     "B": { "item": "minecraft:beacon"}
   },
   "result": {
-    "id": "personal_beacon:beacon_medaillon",
+    "id": "personalbeacon:beacon_medaillon",
     "count": 1
   }
 }

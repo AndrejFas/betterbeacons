@@ -1,9 +1,5 @@
-# personal_beacon
+# Personal Beacon
 
-## Setup
+A mod that adds a necklace which acts as your very own personal beacon in the form of a necklace trinket. It only works when in the range of regular vanilla beacon. In order to select effects in the trinket, you must first put in blocks that give you points. These points translate to charges - the amount of effect levels you can select. To select more effects, you need to put in the necklace additional beacons.
 
-For setup instructions, please see the [Fabric Documentation page](https://docs.fabricmc.net/develop/getting-started/creating-a-project#setting-up) related to the IDE that you are using.
-
-## License
-
-This template is available under the CC0 license. Feel free to learn from it and incorporate it in your own projects.
+This mod is in beta.

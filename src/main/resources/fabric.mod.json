@@ -1,36 +1,28 @@
 {
 	"schemaVersion": 1,
-	"id": "personal_beacon",
+	"id": "personalbeacon",
 	"version": "${version}",
 	"name": "Personal Beacon",
-	"description": "This mod adds personal beacon with custom effects that is powered by vanilla beacon!",
+	"description": "Adds personal beacon with custom effects that is powered by vanilla beacon!",
 	"authors": [
-		"Me!"
+		"AndrejFas"
 	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
 	"license": "CC0-1.0",
-	"icon": "assets/personal_beacon/icon.png",
+	"icon": "assets/personalbeacon/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"name.personal_beacon.PersonalBeacon"
+			"com.redandwhitefox.personalbeacon.PersonalBeacon"
 		],
 		"client": [
-			"name.personal_beacon.client.PersonalBeaconClient"
+			"com.redandwhitefox.personalbeacon.client.PersonalBeaconClient"
 		],
 		"modmenu": [
-			"name.personal_beacon.client.ModMenuIntegration"
+			"com.redandwhitefox.personalbeacon.client.ModMenuIntegration"
 		]
 	},
 	"mixins": [
-		"personal_beacon.mixins.json",
-		{
-			"config": "personal_beacon.client.mixins.json",
-			"environment": "client"
-		}
+		"personalbeacon.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.16.14",
